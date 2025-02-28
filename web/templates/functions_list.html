@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functions List</title>
+</head>
+
+<body>
+    <h1>List of Functions</h1>
+    <ul>
+        {% for function in functions %}
+        <li>
+            <a href="/function/{{ function.name }}">{{ function.name }}</a>
+            <pre><code>{{ function.code }}</code></pre>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Call Graph</a>
+</body>
+
+</html>

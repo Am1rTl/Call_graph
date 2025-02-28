@@ -1,32 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Function Call Graph</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.19.0/cytoscape.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Call Graph</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
 </head>
-<body>
-    <div id="app">
-        <h1>Function Call Graph</h1>
-        <div class="upload-section">
-            <input type="file" @change="handleFileUpload" accept=".c">
-            <button @click="parseCode">Parse Code</button>
-        </div>
-        <div class="view-mode">
-            <label>View Mode:</label>
-            <select v-model="viewMode">
-                <option value="cytoscape">Cytoscape.js</option>
-                <option value="flypie">Fly Pie-like</option>
-            </select>
-        </div>
-        <div v-if="viewMode === 'cytoscape'" id="cytoscape-container" class="graph-container"></div>
-        <div v-if="viewMode === 'flypie'" id="flypie-container" class="graph-container"></div>
-    </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<body>
+    <h1>Upload C File</h1>
+    <form action="/" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".c">
+        <button type="submit">Upload</button>
+    </form>
+
+    {% if nodes %}
+    <h2>Call Graph</h2>
+    <div id="graphCanvas" style="width: 100%; height: 600px; border: 1px solid #ccc;"></div>
+    <script>
+        const nodes = {{ nodes | tojson }};
+        const edges = {{ edges | tojson }};
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Создание массива узлов для vis.js
+            const visNodes = new vis.DataSet(nodes.map((node, index) => ({
+                id: index,
+                label: node
+            })));
+
+            // Создание массива рёбер для vis.js
+            const visEdges = new vis.DataSet(edges.map((edge, index) => ({
+                from: nodes.indexOf(edge[0]),
+                to: nodes.indexOf(edge[1]),
+                id: index
+            })));
+
+            // Настройка контейнера для графа
+            const container = document.getElementById("graphCanvas");
+
+            // Настройка данных для графа
+            const data = {
+                nodes: visNodes,
+                edges: visEdges
+            };
+
+            // Настройка опций графа
+            const options = {
+                nodes: {
+                    shape: "dot",
+                    size: 20,
+                    font: { size: 14 }
+                },
+                edges: {
+                    arrows: { to: true },
+                    smooth: false
+                },
+                interaction: {
+                    hover: true
+                }
+            };
+
+            // Создание графа
+            const network = new vis.Network(container, data, options);
+
+            // Обработка кликов на узлах
+            network.on("click", (params) => {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const functionName = nodes[nodeId];
+                    fetch(`/get_function/${functionName}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const modal = document.createElement("div");
+                            modal.innerHTML = `
+                                <style>${data.style}</style>
+                                <pre><code class="source">${data.code}</code></pre>
+                                <button onclick="copyCode()">Copy Code</button>
+                                <button onclick="location.href='/function/${functionName}'">Details</button>
+                            `;
+                            document.body.appendChild(modal);
+                            function copyCode() {
+                                navigator.clipboard.writeText(modal.querySelector("pre code").innerText);
+                                alert("Code copied to clipboard!");
+                            }
+                        });
+                }
+            });
+        });
+    </script>
+    {% endif %}
 </body>
+
 </html>
