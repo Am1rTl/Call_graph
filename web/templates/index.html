@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Call Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.19.0/cytoscape.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="app">
+        <h1>Function Call Graph</h1>
+        <div class="upload-section">
+            <input type="file" @change="handleFileUpload" accept=".c">
+            <button @click="parseCode">Parse Code</button>
+        </div>
+        <div class="view-mode">
+            <label>View Mode:</label>
+            <select v-model="viewMode">
+                <option value="cytoscape">Cytoscape.js</option>
+                <option value="flypie">Fly Pie-like</option>
+            </select>
+        </div>
+        <div v-if="viewMode === 'cytoscape'" id="cytoscape-container" class="graph-container"></div>
+        <div v-if="viewMode === 'flypie'" id="flypie-container" class="graph-container"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

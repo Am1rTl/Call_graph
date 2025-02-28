@@ -50,7 +50,7 @@ def parse_code(code):
 
 if __name__ == "__main__":
     # Чтение файла с кодом на C
-    with open("code.c", "r") as file:
+    with open("tmp.c", "r") as file:
         c_code = file.read()
 
     # Парсинг функций
