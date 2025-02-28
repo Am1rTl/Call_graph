@@ -24,71 +24,163 @@
         const nodes = {{ nodes | tojson }};
         const edges = {{ edges | tojson }};
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // Создание массива узлов для vis.js
-            const visNodes = new vis.DataSet(nodes.map((node, index) => ({
-                id: index,
-                label: node
-            })));
+        let modalHistory = []; // Список всех открытых модальных окон
+        let lastActiveModal = null; // Текущее активное модальное окно
 
-            // Создание массива рёбер для vis.js
-            const visEdges = new vis.DataSet(edges.map((edge, index) => ({
-                from: nodes.indexOf(edge[0]),
-                to: nodes.indexOf(edge[1]),
-                id: index
-            })));
+        const networkNodes = new vis.DataSet(nodes.map((node, index) => ({
+            id: index,
+            label: node,
+            fixed: { x: true, y: true }
+        })));
 
-            // Настройка контейнера для графа
-            const container = document.getElementById("graphCanvas");
+        const networkEdges = new vis.DataSet(edges.map((edge, index) => ({
+            from: nodes.indexOf(edge[0]),
+            to: nodes.indexOf(edge[1]),
+            id: index
+        })));
 
-            // Настройка данных для графа
-            const data = {
-                nodes: visNodes,
-                edges: visEdges
-            };
+        const container = document.getElementById("graphCanvas");
+        const data = {
+            nodes: networkNodes,
+            edges: networkEdges
+        };
 
-            // Настройка опций графа
-            const options = {
-                nodes: {
-                    shape: "dot",
-                    size: 20,
-                    font: { size: 14 }
-                },
-                edges: {
-                    arrows: { to: true },
-                    smooth: false
-                },
-                interaction: {
-                    hover: true
-                }
-            };
+        const options = {
+            nodes: {
+                shape: "dot",
+                size: 20,
+                font: { size: 14 }
+            },
+            edges: {
+                arrows: { to: true },
+                smooth: false
+            },
+            interaction: {
+                dragNodes: true,
+                hover: true
+            },
+            physics: false,
+            layout: {
+                hierarchical: false
+            }
+        };
 
-            // Создание графа
-            const network = new vis.Network(container, data, options);
+        const network = new vis.Network(container, data, options);
 
-            // Обработка кликов на узлах
-            network.on("click", (params) => {
-                if (params.nodes.length > 0) {
-                    const nodeId = params.nodes[0];
-                    const functionName = nodes[nodeId];
-                    fetch(`/get_function/${functionName}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const modal = document.createElement("div");
-                            modal.innerHTML = `
+        // Обработка кликов на узлах
+        network.on("click", (params) => {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const functionName = nodes[nodeId];
+
+                // Разрешаем перемещение только выбранного узла
+                networkNodes.forEach(node => {
+                    if (node.id === nodeId) {
+                        networkNodes.update({ ...node, fixed: { x: false, y: false } });
+                    } else {
+                        networkNodes.update({ ...node, fixed: { x: true, y: true } });
+                    }
+                });
+
+                // Создание draggable модального окна
+                fetch(`/get_function/${functionName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const modal = document.createElement("div");
+                        modal.className = "modal-window";
+                        modal.innerHTML = `
+                            <div class="modal-header">
+                                <span class="close" onclick="closeModal(this.parentElement.parentElement);">×</span>
+                                <h3>${functionName}</h3>
+                            </div>
+                            <div class="modal-content">
                                 <style>${data.style}</style>
                                 <pre><code class="source">${data.code}</code></pre>
-                                <button onclick="copyCode()">Copy Code</button>
+                                <button onclick="copyCode(this)">Copy Code</button>
                                 <button onclick="location.href='/function/${functionName}'">Details</button>
-                            `;
-                            document.body.appendChild(modal);
-                            function copyCode() {
-                                navigator.clipboard.writeText(modal.querySelector("pre code").innerText);
-                                alert("Code copied to clipboard!");
-                            }
-                        });
+                            </div>
+                        `;
+
+                        document.body.appendChild(modal);
+                        makeDraggable(modal);
+
+                        // Добавляем окно в историю и делаем его активным
+                        modalHistory.push(modal);
+                        setActiveModal(modal);
+                    });
+            }
+        });
+
+        // Функция для копирования кода
+        function copyCode(button) {
+            const code = button.closest(".modal-content").querySelector("pre code").innerText;
+            navigator.clipboard.writeText(code);
+            alert("Code copied to clipboard!");
+        }
+
+        // Функция для перетаскивания окна
+        function makeDraggable(element) {
+            const header = element.querySelector(".modal-header");
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            header.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // Закрытие модального окна
+        function closeModal(modal) {
+            const index = modalHistory.indexOf(modal);
+            if (index !== -1) {
+                modalHistory.splice(index, 1); // Удаляем окно из истории
+                modal.remove(); // Удаляем из DOM
+
+                // Переключаем активность на предыдущее окно
+                if (modalHistory.length > 0) {
+                    setActiveModal(modalHistory[modalHistory.length - 1]);
+                } else {
+                    lastActiveModal = null; // Если нет открытых окон, сбрасываем активное окно
                 }
-            });
+            }
+        }
+
+        // Установка активного окна
+        function setActiveModal(modal) {
+            if (lastActiveModal) {
+                lastActiveModal.classList.remove("active");
+            }
+            lastActiveModal = modal;
+            lastActiveModal.classList.add("active");
+        }
+
+        // Закрытие последнего активного окна по Esc
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && lastActiveModal) {
+                closeModal(lastActiveModal);
+            }
         });
     </script>
     {% endif %}
