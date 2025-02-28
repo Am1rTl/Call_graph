@@ -1,9 +1,3 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    position: relative;
-}
-
 .modal-window {
     position: absolute;
     top: 50%;
@@ -15,12 +9,19 @@ body {
     z-index: 1000;
     width: 600px;
     max-width: 90%;
+    min-width: 300px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
     background-color: #f1f1f1;
     padding: 10px;
     cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .modal-header h3 {
@@ -28,11 +29,11 @@ body {
 }
 
 .close {
-    float: right;
     font-size: 20px;
     font-weight: bold;
     color: #aaa;
     cursor: pointer;
+    margin-left: 10px;
 }
 
 .close:hover {
@@ -40,16 +41,31 @@ body {
 }
 
 .modal-content {
+    flex: 1; /* Занимает все доступное пространство */
     padding: 15px;
+    overflow: auto;
+    white-space: pre-wrap;
 }
 
-pre {
-    background-color: #f4f4f4;
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
     padding: 10px;
-    border-radius: 5px;
+    border-top: 1px solid #ddd;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background-color: #ddd;
+    cursor: se-resize;
 }
 
 .modal-window.active {
-    border: 2px solid #007bff; /* Голубая рамка для активного окна */
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Подсветка активного окна */
+    border: 2px solid #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
 }

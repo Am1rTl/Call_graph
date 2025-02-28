@@ -24,8 +24,8 @@
         const nodes = {{ nodes | tojson }};
         const edges = {{ edges | tojson }};
 
-        let modalHistory = []; // Список всех открытых модальных окон
-        let lastActiveModal = null; // Текущее активное модальное окно
+        let modalHistory = [];
+        let lastActiveModal = null;
 
         const networkNodes = new vis.DataSet(nodes.map((node, index) => ({
             id: index,
@@ -67,13 +67,11 @@
 
         const network = new vis.Network(container, data, options);
 
-        // Обработка кликов на узлах
         network.on("click", (params) => {
             if (params.nodes.length > 0) {
                 const nodeId = params.nodes[0];
                 const functionName = nodes[nodeId];
 
-                // Разрешаем перемещение только выбранного узла
                 networkNodes.forEach(node => {
                     if (node.id === nodeId) {
                         networkNodes.update({ ...node, fixed: { x: false, y: false } });
@@ -82,7 +80,6 @@
                     }
                 });
 
-                // Создание draggable модального окна
                 fetch(`/get_function/${functionName}`)
                     .then(response => response.json())
                     .then(data => {
@@ -92,33 +89,37 @@
                             <div class="modal-header">
                                 <span class="close" onclick="closeModal(this.parentElement.parentElement);">×</span>
                                 <h3>${functionName}</h3>
+                                <label>
+                                    <input type="checkbox" class="toggle-wrap" checked>
+                                    Wrap Text
+                                </label>
                             </div>
-                            <div class="modal-content">
+                            <div class="modal-content resizable">
                                 <style>${data.style}</style>
                                 <pre><code class="source">${data.code}</code></pre>
                                 <button onclick="copyCode(this)">Copy Code</button>
                                 <button onclick="location.href='/function/${functionName}'">Details</button>
                             </div>
+                            <div class="resize-handle"></div>
                         `;
 
                         document.body.appendChild(modal);
                         makeDraggable(modal);
+                        makeResizable(modal);
+                        addToggleWrapListener(modal);
 
-                        // Добавляем окно в историю и делаем его активным
                         modalHistory.push(modal);
                         setActiveModal(modal);
                     });
             }
         });
 
-        // Функция для копирования кода
         function copyCode(button) {
             const code = button.closest(".modal-content").querySelector("pre code").innerText;
             navigator.clipboard.writeText(code);
             alert("Code copied to clipboard!");
         }
 
-        // Функция для перетаскивания окна
         function makeDraggable(element) {
             const header = element.querySelector(".modal-header");
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -132,6 +133,8 @@
                 pos4 = e.clientY;
                 document.onmouseup = closeDragElement;
                 document.onmousemove = elementDrag;
+
+                setActiveModal(element);
             }
 
             function elementDrag(e) {
@@ -151,32 +154,85 @@
             }
         }
 
-        // Закрытие модального окна
+        function makeResizable(element) {
+            const resizeHandle = element.querySelector(".resize-handle");
+            let startX, startY, startWidth, startHeight;
+
+            resizeHandle.addEventListener("mousedown", (e) => {
+                e.stopPropagation();
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(window.getComputedStyle(element).width, 10);
+                startHeight = parseInt(window.getComputedStyle(element).height, 10);
+
+                document.addEventListener("mousemove", resize);
+                document.addEventListener("mouseup", stopResize);
+            });
+
+            function resize(e) {
+                element.style.width = `${startWidth + e.clientX - startX}px`;
+                element.style.height = `${startHeight + e.clientY - startY}px`;
+
+                const content = element.querySelector(".modal-content");
+                content.style.overflow = "auto";
+            }
+
+            function stopResize() {
+                document.removeEventListener("mousemove", resize);
+                document.removeEventListener("mouseup", stopResize);
+            }
+        }
+
+        function addToggleWrapListener(modal) {
+            const toggleWrapCheckbox = modal.querySelector(".toggle-wrap");
+            const content = modal.querySelector(".modal-content");
+
+            if (!content) {
+                console.error("Modal content not found!");
+                return;
+            }
+
+            toggleWrapCheckbox.addEventListener("change", () => {
+                if (toggleWrapCheckbox.checked) {
+                    content.style.whiteSpace = "pre-wrap";
+                    content.style.overflowX = "hidden";
+                } else {
+                    content.style.whiteSpace = "pre";
+                    content.style.overflowX = "auto";
+                }
+                content.style.overflowY = "auto";
+            });
+        }
+
         function closeModal(modal) {
             const index = modalHistory.indexOf(modal);
             if (index !== -1) {
-                modalHistory.splice(index, 1); // Удаляем окно из истории
-                modal.remove(); // Удаляем из DOM
+                modalHistory.splice(index, 1);
+                modal.remove();
 
-                // Переключаем активность на предыдущее окно
                 if (modalHistory.length > 0) {
                     setActiveModal(modalHistory[modalHistory.length - 1]);
                 } else {
-                    lastActiveModal = null; // Если нет открытых окон, сбрасываем активное окно
+                    lastActiveModal = null;
                 }
             }
         }
 
-        // Установка активного окна
         function setActiveModal(modal) {
-            if (lastActiveModal) {
+            if (lastActiveModal && lastActiveModal !== modal) {
                 lastActiveModal.classList.remove("active");
             }
             lastActiveModal = modal;
             lastActiveModal.classList.add("active");
         }
 
-        // Закрытие последнего активного окна по Esc
+        document.body.addEventListener("click", (event) => {
+            const clickedModal = event.target.closest(".modal-window");
+            if (clickedModal && clickedModal !== lastActiveModal) {
+                setActiveModal(clickedModal);
+            }
+        });
+
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && lastActiveModal) {
                 closeModal(lastActiveModal);
