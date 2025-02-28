@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New Project</title>
+</head>
+<body>
+    <h1>Create New Project</h1>
+    <form action="{{ url_for('new_project') }}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".c" required>
+        <textarea name="description" placeholder="Description (optional)"></textarea>
+        <button type="submit">Upload</button>
+    </form>
+    <a href="{{ url_for('projects') }}">Back to Projects</a>
+</body>
+</html>
