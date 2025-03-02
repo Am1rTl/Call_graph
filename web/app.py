@@ -126,7 +126,6 @@ def index():
         return redirect(url_for("projects"))
     return redirect(url_for("login"))
 
-# Список проектов
 @app.route("/projects")
 def projects():
     user_id = session.get("user_id")
@@ -134,10 +133,15 @@ def projects():
         return redirect(url_for("login"))
 
     user = User.query.get(user_id)
+    if user is None:
+        flash("User  not found. Please log in again.", "error")
+        return redirect(url_for("login"))
+
     if not user.projects:
         flash("You don't have any projects yet. Create a new one!", "info")
     return render_template("projects.html", projects=user.projects)
 
+    
 # Создание нового проекта
 @app.route("/new_project", methods=["GET", "POST"])
 def new_project():

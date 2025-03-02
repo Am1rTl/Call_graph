@@ -7,7 +7,103 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css">
     <style>
-        /* Стили для плавающего окна */
+        /* Общие стили */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Карточки проектов */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .project-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+            border-left: 5px solid transparent; /* Цветовая метка */
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .project-description {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .project-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .project-actions a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .project-actions a:hover {
+            text-decoration: underline;
+        }
+
+        .project-actions button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .project-actions button:hover {
+            background-color: #e53935;
+        }
+
+        /* Кнопка создания нового проекта */
+        .btn-new-project {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-new-project:hover {
+            background-color: #0056b3;
+        }
+
+        /* Modal Window Styling */
         .modal-window {
             position: absolute;
             top: 50%;
@@ -17,25 +113,28 @@
             border: 1px solid #ccc;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            width: 600px;
-            max-width: 90%;
-            min-width: 300px;
-            min-height: 200px;
+            width: 600px; /* Default width */
+            max-width: 90%; /* Responsive width */
+            min-width: 300px; /* Minimum width */
+            min-height: 200px; /* Minimum height */
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Ensures content stacks vertically */
         }
 
+        /* Modal Header */
         .modal-header {
             background-color: #f1f1f1;
             padding: 10px;
-            cursor: move;
+            cursor: move; /* Allows dragging */
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #ddd; /* Optional: Adds a bottom border */
         }
 
         .modal-header h3 {
             margin: 0;
+            font-size: 16px; /* Adjusted font size for better readability */
         }
 
         .close {
@@ -50,21 +149,25 @@
             color: black;
         }
 
+        /* Modal Content */
         .modal-content {
-            flex: 1; /* Занимает все доступное пространство */
+            flex: 1; /* Takes up remaining vertical space */
             padding: 15px;
-            overflow: auto;
-            white-space: pre-wrap;
+            overflow: auto; /* Enables scrolling if content overflows */
+            white-space: pre-wrap; /* Allows text wrapping */
+            word-break: break-word; /* Breaks long words to fit inside the modal */
         }
 
+        /* Modal Actions (Buttons at the bottom) */
         .modal-actions {
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
+            justify-content: flex-end; /* Aligns buttons to the right */
+            gap: 10px; /* Adds spacing between buttons */
             padding: 10px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #ddd; /* Separator line above actions */
         }
 
+        /* Resize Handle */
         .resize-handle {
             position: absolute;
             bottom: 0;
@@ -72,12 +175,13 @@
             width: 10px;
             height: 10px;
             background-color: #ddd;
-            cursor: se-resize;
+            cursor: se-resize; /* Changes cursor to resizing mode */
         }
 
+        /* Active Modal Highlighting */
         .modal-window.active {
-            border: 2px solid #007bff;
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+            border: 2px solid #007bff; /* Blue border for active modals */
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Subtle shadow effect */
         }
     </style>
 </head>
@@ -93,6 +197,23 @@
 
         let modalHistory = [];
         let lastActiveModal = null;
+
+        // Обработчик клика по документу для активации модальных окон
+        document.body.addEventListener("click", (event) => {
+            const modal = event.target.closest(".modal-window");
+            if (modal) {
+                activateModal(modal);
+            }
+        });
+
+        // Функция активации модального окна
+        function activateModal(modal) {
+            if (lastActiveModal) {
+                lastActiveModal.classList.remove("active");
+            }
+            modal.classList.add("active");
+            lastActiveModal = modal;
+        }
 
         // Загрузка состояния окон
         fetch(`/load_windows/{{ project.id }}`)
@@ -152,6 +273,8 @@
                 <div class="resize-handle"></div>
             `;
             document.body.appendChild(modal);
+            modalHistory.push(modal);
+            activateModal(modal); // Активируем новое окно
             makeDraggable(modal);
             makeResizable(modal);
             addCloseListener(modal);
@@ -182,6 +305,8 @@
                 <div class="resize-handle"></div>
             `;
             document.body.appendChild(modal);
+            modalHistory.push(modal);
+            activateModal(modal); // Активируем новое окно
             makeDraggable(modal);
             makeResizable(modal);
             addCloseListener(modal);
@@ -190,6 +315,11 @@
         function addCloseListener(modal) {
             modal.querySelector(".close").addEventListener("click", () => {
                 modal.remove();
+                modalHistory.pop(); // Удаляем текущее окно из истории
+                lastActiveModal = modalHistory[modalHistory.length - 1]; // Получаем предыдущее окно
+                if (lastActiveModal) {
+                    activateModal(lastActiveModal); // Активируем предыдущее окно
+                }
                 saveWindowState();
             });
         }
@@ -198,7 +328,10 @@
             const header = element.querySelector(".modal-header");
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
-            header.onmousedown = dragMouseDown;
+            header.onmousedown = (e) => {
+                activateModal(element); // Активируем окно при перетаскивании
+                dragMouseDown(e);
+            };
 
             function dragMouseDown(e) {
                 e = e || window.event;
@@ -280,6 +413,19 @@
             navigator.clipboard.writeText(code);
             alert("Code copied to clipboard!");
         }
+
+        // Обработчик нажатия клавиши Esc
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && lastActiveModal) {
+                lastActiveModal.remove();
+                modalHistory.pop(); // Удаляем текущее окно из истории
+                lastActiveModal = modalHistory[modalHistory.length - 1]; // Получаем предыдущее окно
+                if (lastActiveModal) {
+                    activateModal(lastActiveModal); // Активируем предыдущее окно
+                }
+                saveWindowState();
+            }
+        });
     </script>
     {% endif %}
 </body>
