@@ -25,7 +25,8 @@ h1 {
     padding: 15px;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     cursor: pointer;
-    border-left: 5px solid transparent; /* Цветовая метка */
+    border-left: 5px solid transparent;
+    /* Цветовая метка */
 }
 
 .project-card:hover {
@@ -104,28 +105,32 @@ h1 {
     border: 1px solid #ccc;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    width: 600px; /* Default width */
-    max-width: 90%; /* Responsive width */
-    min-width: 300px; /* Minimum width */
-    min-height: 200px; /* Minimum height */
+    /* Базовый z-index */
+    width: 600px;
+    max-width: 90%;
+    min-width: 300px;
+    min-height: 200px;
     display: flex;
-    flex-direction: column; /* Ensures content stacks vertically */
+    flex-direction: column;
 }
 
 /* Modal Header */
 .modal-header {
     background-color: #f1f1f1;
     padding: 10px;
-    cursor: move; /* Allows dragging */
+    cursor: move;
+    /* Allows dragging */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #ddd; /* Optional: Adds a bottom border */
+    border-bottom: 1px solid #ddd;
+    /* Optional: Adds a bottom border */
 }
 
 .modal-header h3 {
     margin: 0;
-    font-size: 16px; /* Adjusted font size for better readability */
+    font-size: 16px;
+    /* Adjusted font size for better readability */
 }
 
 .close {
@@ -142,20 +147,27 @@ h1 {
 
 /* Modal Content */
 .modal-content {
-    flex: 1; /* Takes up remaining vertical space */
+    flex: 1;
+    /* Takes up remaining vertical space */
     padding: 15px;
-    overflow: auto; /* Enables scrolling if content overflows */
-    white-space: pre-wrap; /* Allows text wrapping */
-    word-break: break-word; /* Breaks long words to fit inside the modal */
+    overflow: auto;
+    /* Enables scrolling if content overflows */
+    white-space: pre-wrap;
+    /* Allows text wrapping */
+    word-break: break-word;
+    /* Breaks long words to fit inside the modal */
 }
 
 /* Modal Actions (Buttons at the bottom) */
 .modal-actions {
     display: flex;
-    justify-content: flex-end; /* Aligns buttons to the right */
-    gap: 10px; /* Adds spacing between buttons */
+    justify-content: flex-end;
+    /* Aligns buttons to the right */
+    gap: 10px;
+    /* Adds spacing between buttons */
     padding: 10px;
-    border-top: 1px solid #ddd; /* Separator line above actions */
+    border-top: 1px solid #ddd;
+    /* Separator line above actions */
 }
 
 /* Resize Handle */
@@ -166,82 +178,14 @@ h1 {
     width: 10px;
     height: 10px;
     background-color: #ddd;
-    cursor: se-resize; /* Changes cursor to resizing mode */
+    cursor: se-resize;
+    /* Changes cursor to resizing mode */
 }
 
 /* Active Modal Highlighting */
 .modal-window.active {
-    border: 2px solid #007bff; /* Blue border for active modals */
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Subtle shadow effect */
-}
-
-/* Стили для плавающего окна */
-.modal-window {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    width: 600px;
-    max-width: 90%;
-    min-width: 300px;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-header {
-    background-color: #f1f1f1;
-    padding: 10px;
-    cursor: move;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close {
-    font-size: 20px;
-    font-weight: bold;
-    color: #aaa;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-.close:hover {
-    color: black;
-}
-
-.modal-content {
-    flex: 1; /* Занимает все доступное пространство */
-    padding: 15px;
-    overflow: auto;
-    white-space: pre-wrap;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 10px;
-    border-top: 1px solid #ddd;
-}
-
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 10px;
-    height: 10px;
-    background-color: #ddd;
-    cursor: se-resize;
-}
-
-.modal-window.active {
     border: 2px solid #007bff;
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    z-index: 2000;
+    /* Выше базового значения */
 }
-
-

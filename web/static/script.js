@@ -1,12 +1,17 @@
 // Список истории модальных окон
 let modalHistory = [];
 let activeModal = null;
+let zIndexCounter = 1000;
 
 // Функция активации модального окна
 function activateModal(modal) {
     if (activeModal) {
         activeModal.classList.remove('active');
     }
+
+    // Увеличиваем z-index для активного окна
+    modal.style.zIndex = ++zIndexCounter;
+
     modal.classList.add('active');
     activeModal = modal;
 }
@@ -128,3 +133,9 @@ document.querySelectorAll('.graph-node').forEach(node => {
         createModal(content);
     });
 });
+
+
+
+
+
+
