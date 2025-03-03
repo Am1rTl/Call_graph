@@ -290,26 +290,34 @@
             modal.style.height = `${state.height}px`;
 
             modal.innerHTML = `
-                <div class="modal-header">
-                    <span class="close">×</span>
-                    <h3>${state.name}</h3>
-                </div>
-                <div class="modal-content resizable">
-                    <style>${state.style}</style>
-                    <pre><code class="source">${state.code}</code></pre>
-                </div>
-                <div class="modal-actions">
-                    <button onclick="copyCode(this)">Copy Code</button>
-                    <button onclick="location.href='/function/{{ project.id }}/${state.name}'">Details</button>
-                </div>
-                <div class="resize-handle"></div>
-            `;
+            <div class="modal-header">
+                <span class="close">×</span>
+                <h3>${state.name}</h3>
+            </div>
+            <div class="modal-content resizable">
+                <style>${state.style}</style>
+                <pre><code class="language-python source">${state.highlighted_code || state.code}</code></pre>
+            </div>
+            <div class="modal-actions">
+                <button onclick="copyCode(this)">Copy Code</button>
+                <button onclick="location.href='/function/{{ project.id }}/${state.name}'">Details</button>
+            </div>
+            <div class="resize-handle"></div>
+        `;
+
+            // Добавляем модальное окно в DOM
             document.body.appendChild(modal);
             modalHistory.push(modal);
             activateModal(modal); // Активируем новое окно
             makeDraggable(modal);
             makeResizable(modal);
             addCloseListener(modal);
+
+            // Вызываем подсветку синтаксиса (если Highlight.js загружена)
+            const codeBlock = modal.querySelector('code');
+            if (codeBlock && typeof hljs !== 'undefined') {
+                hljs.highlightElement(codeBlock);
+            }
         }
 
         function addCloseListener(modal) {
