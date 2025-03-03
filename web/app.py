@@ -230,7 +230,19 @@ def delete_project(project_id):
 @app.route("/load_windows/<int:project_id>")
 def load_windows(project_id):
     project = Project.query.get_or_404(project_id)
-    return jsonify(json.loads(project.window_state or "[]"))
+    code = json.loads(project.window_state)
+    print(f"The len is {len(code)}")
+    for data in code:
+        tmp = data['code']
+        tmp = tmp.split("\n")
+        code_str = ''
+        for i in range((len(tmp)-1)//2, len(tmp)):
+            code_str += tmp[i] + '\n'
+        data['code'] = code_str
+
+    if not project.window_state:
+        data = []
+    return jsonify(code)
 
 # Сохранение состояния окон
 @app.route("/save_windows/<int:project_id>", methods=["POST"])
