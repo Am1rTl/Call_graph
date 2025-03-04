@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: {{ project.name }}</title>
+    <style>
+        /* Добавьте ваши стили здесь */
+        .source {
+            /* Стили для подсвеченного кода */
+        }
+
+        {{ style }}
+
+        /* Стили для кнопки "Назад" */
+        .back-button {
+            background-color: #007bff;
+            /* Синий цвет */
+            color: white;
+            /* Цвет текста */
+            border: none;
+            /* Без границы */
+            padding: 10px 20px;
+            /* Отступы */
+            text-align: center;
+            /* Выравнивание текста */
+            text-decoration: none;
+            /* Убираем подчеркивание */
+            display: inline-block;
+            /* Отображение в строку */
+            font-size: 16px;
+            /* Размер шрифта */
+            margin: 10px 0;
+            /* Отступы сверху и снизу */
+            cursor: pointer;
+            /* Указатель при наведении */
+            border-radius: 5px;
+            /* Закругленные углы */
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+            /* Темнее при наведении */
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Project: {{ project.name }}</h2>
+
+    <div style="{{ style }}">
+        <pre>{{ highlighted_code|safe }}</pre>
+    </div>
+    <a href="javascript:history.back()" class="back-button">Назад</a>
+
+</body>
+
+</html>

@@ -183,3 +183,27 @@ def setup_routes(app):
         project.window_state = json.dumps(window_state)
         db.session.commit()
         return "", 200
+
+    @app.route("/function/<int:project_id>/<function_name>")
+    def view_function(project_id, function_name):
+        # Получаем проект по ID
+        project = Project.query.get_or_404(project_id)
+        
+        # Создаем граф вызовов и получаем данные о функции
+        func_dict = create_call_graph(parse_c_functions(project.file_content))
+        function_data = func_dict.get(function_name, {})
+        
+        # Подсвечиваем код функции
+        highlighted_code, style = highlight_code(function_data.get("code", ""))
+        
+        # Подготовка данных для передачи в шаблон
+        nodes = []  # Замените на вашу логику для получения узлов
+        edges = []  # Замените на вашу логику для получения рёбер
+
+        # Рендерим HTML-шаблон с переданными данными
+        return render_template(
+            "function_viewer.html",
+            project=project,
+            highlighted_code=highlighted_code,
+            style=style,
+        )

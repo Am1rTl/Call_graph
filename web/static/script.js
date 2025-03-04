@@ -84,46 +84,80 @@ document.addEventListener('keydown', (event) => {
 });
 
 // Создание нового модального окна
-function createModal(content) {
-    const modal = document.createElement('div');
-    modal.className = 'modal-window';
+function createModal(name, code, style) {
+    const modal = document.createElement("div");
+    modal.className = "modal-window";
+
+    // Устанавливаем начальные ограничения на размер окна
+    const initialMaxWidth = window.innerWidth * 0.5; // 50% ширины экрана
+    const initialMaxHeight = window.innerHeight * 0.75; // 75% высоты экрана
+
+    modal.style.maxWidth = `${initialMaxWidth}px`;
+    modal.style.maxHeight = `${initialMaxHeight}px`;
+
     modal.innerHTML = `
         <div class="modal-header">
-            <h3>Новое модальное окно</h3>
-            <span class="close" title="Закрыть">X</span>
+            <span class="close">×</span>
+            <h3>${name}</h3>
         </div>
-        <div class="modal-content">${content}</div>
+        <div class="modal-content resizable">
+            <style>${style}</style>
+            <pre><code class="source">${code}</code></pre>
+        </div>
         <div class="modal-actions">
-            <button class="ok-btn">OK</button>
-            <button class="cancel-btn">Отмена</button>
+            <button onclick="copyCode(this)">Copy Code</button>
+            <button onclick="location.href='/function/{{ project.id }}/${name}'">Details</button>
         </div>
+        <div class="resize-handle"></div>
     `;
-
-    // Добавляем обработчик закрытия
-    modal.querySelector('.close').addEventListener('click', () => {
-        closeModal(modal);
-    });
-
-    // Добавляем обработчики кнопок
-    modal.querySelector('.ok-btn').addEventListener('click', () => {
-        alert('OK clicked!');
-        closeModal(modal);
-    });
-
-    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-        alert('Cancel clicked!');
-        closeModal(modal);
-    });
-
-    // Добавляем окно в историю и делаем активным
-    modalHistory.push(modal);
-    activateModal(modal);
-
-    // Делаем окно перетаскиваемым
-    makeDraggable(modal);
-
-    // Добавляем окно в DOM
     document.body.appendChild(modal);
+    modalHistory.push(modal);
+    activateModal(modal); // Активируем новое окно
+    makeDraggable(modal);
+    makeResizable(modal);
+    addCloseListener(modal);
+    saveWindowState(modal);
+}
+
+function makeResizable(element) {
+    const resizeHandle = element.querySelector(".resize-handle");
+    let startX, startY, startWidth, startHeight;
+
+    resizeHandle.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = parseInt(window.getComputedStyle(element).width, 10);
+        startHeight = parseInt(window.getComputedStyle(element).height, 10);
+
+        document.addEventListener("mousemove", resize);
+        document.addEventListener("mouseup", stopResize);
+    });
+
+    function resize(e) {
+        let newWidth = startWidth + (e.clientX - startX);
+        let newHeight = startHeight + (e.clientY - startY);
+
+        // Убираем ограничения на размер после начала ресайза
+        element.style.maxWidth = "none";
+        element.style.maxHeight = "none";
+
+        // Минимальные размеры окна
+        const minWidth = 300;
+        const minHeight = 200;
+
+        if (newWidth < minWidth) newWidth = minWidth;
+        if (newHeight < minHeight) newHeight = minHeight;
+
+        element.style.width = `${newWidth}px`;
+        element.style.height = `${newHeight}px`;
+        saveWindowState(element);
+    }
+
+    function stopResize() {
+        document.removeEventListener("mousemove", resize);
+        document.removeEventListener("mouseup", stopResize);
+    }
 }
 
 // Пример: создание модального окна при клике на узел графа

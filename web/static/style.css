@@ -105,9 +105,9 @@ h1 {
     border: 1px solid #ccc;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    /* Базовый z-index */
     width: 600px;
     max-width: 90%;
+    /* Базовое ограничение */
     min-width: 300px;
     min-height: 200px;
     display: flex;
@@ -187,5 +187,4 @@ h1 {
     border: 2px solid #007bff;
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
     z-index: 2000;
-    /* Выше базового значения */
 }
