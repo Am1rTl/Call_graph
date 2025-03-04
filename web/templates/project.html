@@ -20,9 +20,10 @@
         const nodes = {{ nodes | tojson }};
         const edges = {{ edges | tojson }};
         const projectId = "{{ project.id }}";
+        const initialNodePositions = {{ node_positions | tojson }}; // Получаем позиции узлов из шаблона
 
         // Инициализация графа и модальных окон
-        initProject(nodes, edges, projectId);
+        initProject(nodes, edges, projectId, initialNodePositions);
     </script>
     {% endif %}
 </body>

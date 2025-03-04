@@ -1,5 +1,8 @@
+// static/project.js
+
 let modalHistory = [];
 let lastActiveModal = null;
+let isShiftDown = false;
 
 // Выносим функцию copyCode в глобальную область видимости
 function copyCode(button) {
@@ -52,7 +55,6 @@ function initProject(nodes, edges, projectId) {
             data.forEach(windowData => createModalFromState(windowData));
         });
 
-    // Граф
     const networkNodes = new vis.DataSet(nodes.map((node, index) => ({
         id: index,
         label: node,
@@ -69,33 +71,95 @@ function initProject(nodes, edges, projectId) {
     const data = { nodes: networkNodes, edges: networkEdges };
     const options = {
         physics: false,
-        layout: { hierarchical: false }
+        layout: { hierarchical: false },
+        manipulation: {
+            enabled: false,  // Disable built-in manipulation
+            initiallyActive: false,
+            addEdge: false,
+            editNode: false,
+            deleteNode: false,
+            deleteEdge: false,
+        }
     };
+
     const network = new vis.Network(container, data, options);
 
-    network.on("click", (params) => {
-        if (params.nodes.length > 0) {
-            const nodeId = params.nodes[0];
-            const functionName = nodes[nodeId];
-
-            // Ищем существующее модальное окно с таким же именем функции
-            const existingModal = Array.from(document.querySelectorAll(".modal-window")).find(modal => {
-                const modalTitle = modal.querySelector("h3");
-                return modalTitle && modalTitle.textContent === functionName;
-            });
-
-            if (existingModal) {
-                // Если окно уже открыто, закрываем его
-                existingModal.remove();
-                modalHistory = modalHistory.filter(modal => modal !== existingModal);
+    if (initialNodePositions && Object.keys(initialNodePositions).length > 0) {
+        // loop through the nodes and update their positions.  Also make them fixed
+        networkNodes.forEach(node => {
+            if (initialNodePositions[node.id]) {
+                networkNodes.update({ id: node.id, x: initialNodePositions[node.id].x, y: initialNodePositions[node.id].y });
             }
+        });
+    }
 
-            // Загружаем данные функции и создаем новое модальное окно
-            fetch(`/get_function/${projectId}/${functionName}`)
-                .then(response => response.json())
-                .then(data => createModal(functionName, data.code, data.style));
+    // Keydown event listener to detect Shift key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Shift') {
+            isShiftDown = true;
         }
     });
+
+    // Keyup event listener to detect Shift key release
+    document.addEventListener('keyup', function (event) {
+        if (event.key === 'Shift') {
+            isShiftDown = false;
+        }
+    });
+
+    network.on("click", (params) => {
+        if (!isShiftDown) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const functionName = nodes[nodeId];
+
+                // Ищем существующее модальное окно с таким же именем функции
+                const existingModal = Array.from(document.querySelectorAll(".modal-window")).find(modal => {
+                    const modalTitle = modal.querySelector("h3");
+                    return modalTitle && modalTitle.textContent === functionName;
+                });
+
+                if (existingModal) {
+                    // Если окно уже открыто, закрываем его
+                    existingModal.remove();
+                    modalHistory = modalHistory.filter(modal => modal !== existingModal);
+                }
+
+                // Загружаем данные функции и создаем новое модальное окно
+                fetch(`/get_function/${projectId}/${functionName}`)
+                    .then(response => response.json())
+                    .then(data => createModal(functionName, data.code, data.style));
+            }
+        }
+    });
+
+    // Enable dragging when Shift key is pressed
+    network.on("dragStart", function (params) {
+        if (isShiftDown && params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            networkNodes.update({ id: nodeId, fixed: false }); // Make node movable
+        }
+    });
+
+    // Prevent drag end event when Shift key is not pressed
+    network.on("dragEnd", function (params) {
+        if (isShiftDown && params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            networkNodes.update({ id: nodeId, fixed: true }); // Fix node after dragging
+
+            // Save node positions after dragging ends
+            const positions = network.getPositions();
+            saveNodePositions(positions);
+        }
+    });
+
+    function saveNodePositions(positions) {
+        fetch(`/save_node_positions/${projectId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(positions)
+        });
+    }
 
     function createModal(name, code, style) {
         const modal = document.createElement("div");

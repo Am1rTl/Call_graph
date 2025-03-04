@@ -1,3 +1,4 @@
+# models.py
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()  # Create a SQLAlchemy instance (without app initialization)
@@ -17,4 +18,5 @@ class Project(db.Model):
     description = db.Column(db.Text, nullable=True)
     file_content = db.Column(db.Text, nullable=False)
     window_state = db.Column(db.Text, nullable=True)  # JSON for window state
+    node_positions = db.Column(db.Text, nullable=True) # JSON for node positions
     created_at = db.Column(db.DateTime, server_default=db.func.now())

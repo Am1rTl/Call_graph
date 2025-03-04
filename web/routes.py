@@ -92,39 +92,6 @@ def setup_routes(app):
                 return redirect(url_for("project", project_id=new_project.id))
         return render_template("new_project.html")
 
-    # Project Route
-    @app.route("/project/<int:project_id>", methods=["GET", "POST"])
-    def project(project_id):
-        user_id = session.get("user_id")
-        if not user_id:
-            return redirect(url_for("login"))
-
-        project = Project.query.get_or_404(project_id)
-        if project.user_id != user_id:
-            return "Access denied", 403
-
-        if request.method == "POST":
-            window_state = request.form.get("window_state", "[]")
-            project.window_state = window_state
-            db.session.commit()
-
-        functions = parse_c_functions(project.file_content)
-        func_dict = create_call_graph(functions)
-        nodes = list(func_dict.keys())
-        edges = []
-        for caller, data in func_dict.items():
-            for callee in data["calls"]:
-                if callee in func_dict:
-                    edges.append([caller, callee])
-
-        return render_template(
-            "project.html",
-            project=project,
-            nodes=nodes,
-            edges=edges,
-            func_dict=func_dict
-        )
-
     # Get Function Code Route
     @app.route("/get_function/<int:project_id>/<function_name>")
     def get_function(project_id, function_name):
@@ -215,4 +182,52 @@ def setup_routes(app):
         db.session.commit()
 
         return jsonify({"success": True})
+    
+    @app.route("/save_node_positions/<int:project_id>", methods=["POST"])
+    def save_node_positions(project_id):
+        project = Project.query.get_or_404(project_id)
+        node_positions = request.json
+        project.node_positions = json.dumps(node_positions)
+        db.session.commit()
+        return jsonify({"success": True})
+
+    @app.route("/project/<int:project_id>", methods=["GET", "POST"])
+    def project(project_id):
+        user_id = session.get("user_id")
+        if not user_id:
+            return redirect(url_for("login"))
+
+        project = Project.query.get_or_404(project_id)
+        if project.user_id != user_id:
+            return "Access denied", 403
+
+        if request.method == "POST":
+            window_state = request.form.get("window_state", "[]")
+            project.window_state = window_state
+            db.session.commit()
+
+        functions = parse_c_functions(project.file_content)
+        func_dict = create_call_graph(functions)
+        nodes = list(func_dict.keys())
+        edges = []
+        for caller, data in func_dict.items():
+            for callee in data["calls"]:
+                if callee in func_dict:
+                    edges.append([caller, callee])
+
+        # Load Node Positions from DB
+        node_positions = project.node_positions
+        if node_positions:
+            node_positions = json.loads(node_positions)
+        else:
+            node_positions = {}
+
+        return render_template(
+            "project.html",
+            project=project,
+            nodes=nodes,
+            edges=edges,
+            func_dict=func_dict,
+            node_positions=node_positions  # Pass node positions to template
+        )
         
