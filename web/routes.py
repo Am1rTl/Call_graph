@@ -197,4 +197,22 @@ def setup_routes(app):
             highlighted_code=highlighted_code,
             style=style,
         )
-    
+    @app.route("/rename_function/<int:project_id>/<old_name>", methods=["POST"])
+    def rename_function(project_id, old_name):
+        data = request.json
+        new_name = data.get("newName")
+        if not new_name:
+            return jsonify({"success": False, "error": "New name is required"}), 400
+
+        project = Project.query.get_or_404(project_id)
+        func_dict = create_call_graph(parse_c_functions(project.file_content))
+
+        if old_name not in func_dict:
+            return jsonify({"success": False, "error": "Function not found"}), 404
+
+        # Обновляем имя функции в файле проекта
+        project.file_content = project.file_content.replace(old_name, new_name)
+        db.session.commit()
+
+        return jsonify({"success": True})
+        
