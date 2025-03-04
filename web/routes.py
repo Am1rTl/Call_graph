@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from models import User, Project, db  # Import the db object
 from utils import parse_c_functions, create_call_graph, highlight_code  # Import utility functions
 import json
+import re
 
 def setup_routes(app):
     # Registration Route
@@ -172,13 +173,39 @@ def setup_routes(app):
             return jsonify({"success": False, "error": "New name is required"}), 400
 
         project = Project.query.get_or_404(project_id)
-        func_dict = create_call_graph(parse_c_functions(project.file_content))
 
-        if old_name not in func_dict:
-            return jsonify({"success": False, "error": "Function not found"}), 404
+        # Получаем текущий код проекта
+        file_content = project.file_content
 
-        # Обновляем имя функции в файле проекта
-        project.file_content = project.file_content.replace(old_name, new_name)
+        # Паттерн для поиска функции (учитывает return type, имя, параметры и тело)
+        function_pattern = re.compile(
+            r"(?P<return_type>\w+)\s+"  # Return type
+            r"(?P<function_name>" + re.escape(old_name) + r")\s*"  # Function name (escaped old name)
+            r"\((?P<parameters>[^)]*)\)\s*"  # Parameters
+            r"\{(?P<function_body>(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}"  # Function body
+        )
+
+        # Ищем все совпадения паттерна в коде
+        matches = function_pattern.finditer(file_content)
+
+        # Если функция найдена, заменяем её имя во всех вхождениях
+        for match in matches:
+            return_type = match.group("return_type")
+            parameters = match.group("parameters")
+            function_body = match.group("function_body")
+
+            # Создаем новую строку функции с новым именем
+            new_function_string = f"{return_type} {new_name}({parameters}) {{{function_body}}}"
+
+            # Заменяем старую функцию новой функцией в file_content
+            file_content = file_content.replace(match.group(0), new_function_string)
+
+        # Обновляем имя функции в вызовах (если необходимо)
+        file_content = file_content.replace(f"{old_name}(", f"{new_name}(")
+
+        # Обновляем file_content проекта
+        project.file_content = file_content
+
         db.session.commit()
 
         return jsonify({"success": True})
@@ -230,4 +257,3 @@ def setup_routes(app):
             func_dict=func_dict,
             node_positions=node_positions  # Pass node positions to template
         )
-        

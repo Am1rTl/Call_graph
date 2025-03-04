@@ -30,7 +30,7 @@ function copyCode(button) {
         });
 }
 
-function initProject(nodes, edges, projectId) {
+function initProject(nodes, edges, projectId, initialNodePositions) {
     // Обработчик клика по документу для активации модальных окон
     document.body.addEventListener("click", (event) => {
         const modal = event.target.closest(".modal-window");
@@ -107,6 +107,32 @@ function initProject(nodes, edges, projectId) {
         }
     });
 
+    // Keydown event listener for 'R' key to rename function
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'r' || event.key === 'R') {  // Listen for both 'r' and 'R'
+            event.preventDefault();  // Prevent default browser behavior
+
+            // Determine if a function name is selected in the active modal
+            let selectedText = '';
+            if (lastActiveModal) {
+                selectedText = window.getSelection().toString().trim();
+            }
+
+            // If text is selected, use it as the function name
+            if (selectedText) {
+                openRenameModal(projectId, selectedText, lastActiveModal);
+                return;
+            }
+
+            // If no text is selected, rename the function of the active modal itself
+            if (lastActiveModal) {
+                const functionName = lastActiveModal.querySelector("h3").textContent;
+                openRenameModal(projectId, functionName, lastActiveModal);
+            }
+        }
+    });
+
+
     network.on("click", (params) => {
         if (!isShiftDown) {
             if (params.nodes.length > 0) {
@@ -159,6 +185,71 @@ function initProject(nodes, edges, projectId) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(positions)
         });
+    }
+
+    function openRenameModal(projectId, oldName, modal) {
+        // Создаем div для модального окна
+        const renameModal = document.createElement('div');
+        renameModal.className = 'rename-modal';
+        renameModal.innerHTML = `
+            <div class="rename-modal-content">
+                <label for="newFunctionName">New function name:</label>
+                <input type="text" id="newFunctionName" value="${oldName}">
+                <button id="renameButton">Rename</button>
+                <button id="cancelButton">Cancel</button>
+            </div>
+        `;
+
+        // Добавляем модальное окно в body
+        document.body.appendChild(renameModal);
+
+        // Получаем элементы управления
+        const newFunctionNameInput = renameModal.querySelector('#newFunctionName');
+        const renameButton = renameModal.querySelector('#renameButton');
+        const cancelButton = renameModal.querySelector('#cancelButton');
+
+        // Обработчик для кнопки Rename
+        renameButton.addEventListener('click', () => {
+            const newName = newFunctionNameInput.value;
+            renameFunction(projectId, oldName, newName, modal);
+            document.body.removeChild(renameModal); // Удаляем модальное окно после переименования
+        });
+
+        // Обработчик для кнопки Cancel
+        cancelButton.addEventListener('click', () => {
+            document.body.removeChild(renameModal); // Просто удаляем модальное окно
+        });
+    }
+
+    function renameFunction(projectId, oldName, newName, modal) {
+        fetch(`/rename_function/${projectId}/${oldName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                newName: newName
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем заголовок модального окна
+                    if (modal) {
+                        modal.querySelector("h3").textContent = newName;
+                    }
+                    // Обновляем ноду в vis.js
+                    networkNodes.forEach(node => {
+                        if (node.label === oldName) {
+                            networkNodes.update({ id: node.id, label: newName });
+                        }
+                    });
+                    // Сохраняем состояние окон после переименования
+                    saveWindowState();
+                } else {
+                    alert(data.error);
+                }
+            });
     }
 
     function createModal(name, code, style) {
