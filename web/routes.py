@@ -197,3 +197,4 @@ def setup_routes(app):
             highlighted_code=highlighted_code,
             style=style,
         )
+    
