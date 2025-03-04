@@ -78,6 +78,19 @@ function initProject(nodes, edges, projectId) {
             const nodeId = params.nodes[0];
             const functionName = nodes[nodeId];
 
+            // Ищем существующее модальное окно с таким же именем функции
+            const existingModal = Array.from(document.querySelectorAll(".modal-window")).find(modal => {
+                const modalTitle = modal.querySelector("h3");
+                return modalTitle && modalTitle.textContent === functionName;
+            });
+
+            if (existingModal) {
+                // Если окно уже открыто, закрываем его
+                existingModal.remove();
+                modalHistory = modalHistory.filter(modal => modal !== existingModal);
+            }
+
+            // Загружаем данные функции и создаем новое модальное окно
             fetch(`/get_function/${projectId}/${functionName}`)
                 .then(response => response.json())
                 .then(data => createModal(functionName, data.code, data.style));
